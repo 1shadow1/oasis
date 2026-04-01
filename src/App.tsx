@@ -74,15 +74,43 @@ export default function App() {
               {logs.length === 0 ? (
                 <span className="text-cyan-800 animate-pulse">_等待遥测数据...</span>
               ) : (
-                logs.map((log) => (
-                  <div key={log.id} className="flex gap-3 text-cyan-100/70 hover:bg-cyan-900/20 px-2 py-1 rounded transition-colors">
-                    <span className="text-cyan-600 shrink-0">
-                      [{log.timestamp.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 })}]
-                    </span>
-                    <span className="font-bold text-cyan-300 shrink-0">{log.agentName}</span>
-                    <span className="text-cyan-100/90">{log.message}</span>
-                  </div>
-                ))
+                logs.map((log) => {
+                  const isProtocol = log.message.includes('[INVOKE_PROTOCOL]');
+                  const isPayload = log.message.includes('[INVOKE_PAYLOAD]');
+                  const isResponse = log.message.includes('[RESPONSE]');
+                  const isSystem = log.agentName === 'SYSTEM';
+                  
+                  let logColor = 'text-cyan-100/70';
+                  let nameColor = 'text-cyan-300';
+                  let bgColor = 'hover:bg-cyan-900/20';
+                  
+                  if (isProtocol) {
+                    logColor = 'text-purple-300';
+                    nameColor = 'text-purple-400';
+                    bgColor = 'bg-purple-900/20 hover:bg-purple-900/40 border-l-2 border-purple-500';
+                  } else if (isPayload) {
+                    logColor = 'text-purple-200/80 text-[9px]';
+                    nameColor = 'text-purple-500/50';
+                    bgColor = 'bg-purple-950/30 border-l-2 border-purple-500/50 ml-4';
+                  } else if (isResponse) {
+                    logColor = 'text-green-300';
+                    nameColor = 'text-green-400';
+                    bgColor = 'bg-green-900/20 hover:bg-green-900/40 border-l-2 border-green-500';
+                  } else if (isSystem) {
+                    logColor = 'text-slate-400';
+                    nameColor = 'text-slate-500';
+                  }
+
+                  return (
+                    <div key={log.id} className={`flex gap-3 px-2 py-1 rounded transition-colors ${bgColor}`}>
+                      <span className="text-cyan-600 shrink-0">
+                        [{log.timestamp.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 })}]
+                      </span>
+                      <span className={`font-bold shrink-0 ${nameColor}`}>{log.agentName}</span>
+                      <span className={`${logColor} whitespace-pre-wrap`}>{log.message}</span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </section>
@@ -97,8 +125,10 @@ export default function App() {
             <span className="text-[10px] font-mono text-cyan-700 border border-cyan-800 px-2 py-0.5">实时</span>
           </div>
           <div className="flex flex-col gap-5">
-            {agents.map(agent => (
-              <AgentCard key={agent.id} agent={agent} />
+            {agents.map((agent) => (
+              <div key={agent.id}>
+                <AgentCard agent={agent} />
+              </div>
             ))}
           </div>
         </div>

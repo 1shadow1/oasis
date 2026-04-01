@@ -37,6 +37,48 @@ export function WorldMap({ agents, pois }: WorldMapProps) {
         <div className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,rgba(0,243,255,0.1)_90deg,transparent_90deg)] animate-[spin_4s_linear_infinite] rounded-full" />
       </div>
 
+      {/* Communication Links (Protocol Visualization) */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+        {agents.map(agent => {
+          if (agent.state === 'COMMUNICATING' && agent.targetAgentId) {
+            const targetAgent = agents.find(a => a.id === agent.targetAgentId);
+            if (targetAgent) {
+              const startX = `${(agent.x / (GRID_SIZE - 1)) * 100}%`;
+              const startY = `${(agent.y / (GRID_SIZE - 1)) * 100}%`;
+              const endX = `${(targetAgent.x / (GRID_SIZE - 1)) * 100}%`;
+              const endY = `${(targetAgent.y / (GRID_SIZE - 1)) * 100}%`;
+              
+              return (
+                <g key={`link-${agent.id}-${targetAgent.id}`}>
+                  {/* Base glowing line */}
+                  <line
+                    x1={startX}
+                    y1={startY}
+                    x2={endX}
+                    y2={endY}
+                    stroke={agent.color}
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                    className="animate-pulse"
+                    style={{ filter: `drop-shadow(0 0 8px ${agent.color})` }}
+                  />
+                  {/* Data packet animation */}
+                  <motion.circle
+                    r="3"
+                    fill="#fff"
+                    style={{ filter: 'drop-shadow(0 0 5px #fff)' }}
+                    initial={{ cx: startX, cy: startY }}
+                    animate={{ cx: endX, cy: endY }}
+                    transition={{ duration: 0.5, repeat: Infinity, ease: "linear" }}
+                  />
+                </g>
+              );
+            }
+          }
+          return null;
+        })}
+      </svg>
+
       {/* POIs (Nodes) */}
       {pois.map((poi) => {
         const Icon = IconMap[poi.icon] || Hexagon;
@@ -107,7 +149,7 @@ export function WorldMap({ agents, pois }: WorldMapProps) {
             )}
 
             {/* Action Indicator */}
-            {agent.state === 'PERFORMING' && (
+            {(agent.state === 'PERFORMING' || agent.state === 'COMMUNICATING') && (
               <motion.div 
                 className="absolute -top-8 left-1/2 -translate-x-1/2 text-[9px] font-mono font-bold tracking-widest uppercase bg-black/80 px-1.5 py-0.5 border border-white/20 whitespace-nowrap"
                 style={{ color: agent.color, textShadow: `0 0 5px ${agent.color}` }}
@@ -118,7 +160,8 @@ export function WorldMap({ agents, pois }: WorldMapProps) {
                  agent.currentGoal === 'REST' ? '休息' :
                  agent.currentGoal === 'WORK' ? '工作' :
                  agent.currentGoal === 'SOCIALIZE' ? '社交' :
-                 agent.currentGoal === 'WANDER' ? '游荡' : agent.currentGoal}
+                 agent.currentGoal === 'WANDER' ? '游荡' : 
+                 agent.currentGoal === 'INVOKE_AGENT' ? '通信中' : agent.currentGoal}
               </motion.div>
             )}
           </div>
